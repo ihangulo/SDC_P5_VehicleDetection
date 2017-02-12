@@ -1,10 +1,12 @@
 
 
-**Vehicle Detection Project**
+## Vehicle Detection Project
+```
 Udacity Self-car driving Nanodegree
 Kwanghyun JUNG
-11 FEB 2017
+12 FEB 2017
 ihangulo@gmail.com
+```
 
 The goals / steps of this project are the following:
 
@@ -47,7 +49,7 @@ I added non-car images capture from project video and test images. You can see "
 
 And when read data, I restrict number of cars data same with non-car data. So it is almost balanced.
 
-car / not car
+
 ![car / not car][image1]
 
 * Hog features (Cell 7)
@@ -118,6 +120,7 @@ After many time trying, I select ``HLS color space``, and when get HOG features 
 Please see ``Cell 10 : make model `` / ``extract_features`` function.
 
 1) Random filp : for more efficent training, 5% of training image will be filpped. But this is only car image. Because lack of non-car images, so I already inlcude flipped images, i mentioned above.
+
 2) get feature image : using ``cv2.cvtColor`` change color space RGB to HLS color space.
 
 3) get spatial_feature : get binned color features (32, 32)
@@ -190,6 +193,7 @@ if(endx <= x_start_stop[1]
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
 ![video pipeline][image6]
+
 I used 'full screen hog features', it's performance is more than 2 or 3 times increased.
 
 I make balanced dataset, it means same data 'car' and 'non-car' images. And get features and using ``StandardScaler().fit(X)`` to normalize data.
@@ -205,7 +209,8 @@ after get model, I tried small test for this model. see ``Cell 12 : Model result
 ### Video Implementation
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video_output_hangulo.mp4)
+
+Here's a [link to my video result](./project_video_output.mp4)
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
