@@ -4,7 +4,8 @@
 ```
 Udacity Self-car driving Nanodegree
 Kwanghyun JUNG
-12 FEB 2017
+1st : 12 FEB 2017
+2nd : 15 FEB 2017
 ihangulo@gmail.com
 ```
 
@@ -45,9 +46,11 @@ You're reading it!
 * prepare data
 
 I used small set data from udacity project 5. But it's too small number, so I added GTI data (http://www.gti.ssr.upm.es/data/Vehicle_database.html). But this is only 'car' images. So there is so many unbalance number of car and non-car images.
-I added non-car images capture from project video and test images. You can see "cell 2" module, how can I capture images. The images have various sizes and include car images. So I delete non-car image by hand and by own eye :) So I've got 9996 car / 9220 non-car images. ( You can see this Cell 6)
+I added non-car images capture from project video and test images. You can see "cell 2" module, how can I capture images. The images have various sizes and include car images. So I delete non-car image by hand and by own eye :) So I've got 4104 car / 4104 non-car images. ( You can see this Cell 6)
 
 And when read data, I restrict number of cars data same with non-car data. So it is almost balanced.
+
+[Note] I've changed the method get test set. Not random, make folder for test set, and captured from video files in it. It is more efficent than last time.
 
 
 ![car / not car][image1]
@@ -92,6 +95,8 @@ But almost half of screen is sky, so I cut the grayscale image 320px from top. S
 
 After that, it's so simple get hog features from full-screen HOG features. Below code will be help to understand
 
+
+
 ``Cell 10 / search_windows()``
 ```
 
@@ -112,23 +117,27 @@ I tried various combinations of color space and etc. ``Cell 9 : Testing color mo
 
 ![HLS Channel][image21]
 HLS Channel 0, 1, 2 : HLS channel 1 is best selection
-
 After many time trying, I select ``HLS color space``, and when get HOG features using channel 1, i.e L channel.
-** Select train and test set
 
-** Process
+#### ** NOTE ** I changed [YCrCb / 0 channel + HSV histogram features ] on my 2nd submission. This is advice from reviewer.
+
+
+** Select train and test set **
+
+** Process **
+
 Please see ``Cell 10 : make model `` / ``extract_features`` function.
 
 1) Random filp : for more efficent training, 5% of training image will be filpped. But this is only car image. Because lack of non-car images, so I already inlcude flipped images, i mentioned above.
 
-2) get feature image : using ``cv2.cvtColor`` change color space RGB to HLS color space.
+2) get feature image : using ``cv2.cvtColor`` change color space RGB to YCrCb color space.
 
 3) get spatial_feature : get binned color features (32, 32)
 Because 32x32px is enough to recognize the picture. It's simple routine like Below. : bin_spatial()
 ```
  features = cv2.resize(img, size).ravel()
 ```
-4) get color histogram : hist_bins = 32 (from HLS image)
+4) get color histogram : hist_bins = 32 (from YCrCb image)
 5) get HOG feature
 6) concatenate all features above
 7) scaled to zero mean and unit variance before training the classifier.
@@ -137,11 +146,11 @@ I choose Linear SVM classifier because, this is detecting 'Is this image is car 
 
 ```
 # Parameters
-color_space = 'HLS' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
 orient = 9  # HOG orientations
 pix_per_cell = 8 # HOG pixels per cell
 cell_per_block = 2 # HOG cells per block
-hog_channel = 1 # L channel # Can be 0, 1, 2, or "ALL"
+hog_channel = ALL # L channel # Can be 0, 1, 2, or "ALL"
 spatial_size = (32,32) #(16, 16) # Spatial binning dimensions
 hist_bins = 32  #16    # Number of histogram bins
 spatial_feat = True # Spatial features on or off
@@ -166,10 +175,10 @@ I choose 320, 256, 128, 64 size of window. and overlaps 0.5 or 0.75. When it nee
 | (320x320) | (0.5,0.5)   |
 | (256x256) | (0.75,0.5)  |
 | (128,128) | (0.75,0.5) |
-| (64,64)   | (0.5,0.5)   |
+| (64,64)   | (0.75,0.5)   |
 
 Below pictures are 320, 256, 128, 64 windows rectangle with overlapping. xy Overlaps are selected after 'trial-and-error' method.
-
+** SNOTE] Some values are changed since 1st submission
 
 ![Sliding windows][image4]
 (From top / 320px, 256px, 128px, 64px)
@@ -185,9 +194,6 @@ if(endx <= x_start_stop[1]
     # Append window position to list
     window_list.append(((startx, starty), (endx, endy)))
 ```
-
-
-
 
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
@@ -226,6 +232,30 @@ It shows almost same heatpmap, because every time heatmap is added and delete ol
 ![video pipeline][image7]
 `scipy.ndimage.measurements.label()` on the integrated heatmap from all recent frames
 
+#### [NOTE]
+I added below routine at Cell 10. Thanks for reviewer's hint, I can delete false positives.
+```
+if prediction == 1:
+  if(abs(clf.decision_function(test_features))<0.8): # check decision  
+    on_windows.append(window)
+```
+And Cell 14, I added validation check, the labeled box size must be bigger than 35px. So some random spots are disappeared.
+
+And another validiation check [See ``Cell #14``] I made Car class. And check 'when no car are not founded'
+```
+# Define a class to find car
+class Car():
+    def __init__(self):
+        # was the car detected in the last iteration?
+        self.detected = False  
+        self.count_not_detected = 0
+        self.hot_windows = [] # hot windows
+        self.threshold = 2
+        self.heatmap = None
+        self.total_cars = 0
+
+```
+
 ---
 
 ###Discussion
@@ -235,5 +265,5 @@ It shows almost same heatpmap, because every time heatmap is added and delete ol
 - The left and right boundary is some speed down factor. Because the useless region must be deleted when processing. I can just mask it like project1, but it is not good for most situation. There is always exceptions.
 - Detect car pipeline is so slow, maybe if I reduce some calculation, then it reduce more time
 - I use full 6 full heatmaps when determine false positives, but it is so many memory leak, so I'll change another way.
-- It needs validation test of heatmap. I think the size of car and the location is most valid factors. Almost car has same width, so if some car is too big or too samll, then it's an error. then I can change that size.
+- It needs validation test of heatmap. I think the size of car and the location is most valid factors. Almost car has same width, so if some car is too big or too samll, then it's an error. then I can change that size. [NOTE] I added some validation check, but it is not perfect. Because I must trail car which is founded, but this time I just check when no car founded.
 - Or transform to bird-eye view, and can calculation the car size with easy. I'll try next time.
